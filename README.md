@@ -1,44 +1,54 @@
 # tf2-edgetpu-examples
 
-Clone tensorflow model repository and checkout to 927e31aa1de2d23fd62b7b2644b67b29d658b944.  
+## 1. Build docker image
+See docker/Dockerfile.  
 ```
-git clone --depth 1 https://github.com/tensorflow/models tensorflow_models
-git checkout 927e31aa1de2d23fd62b7b2644b67b29d658b944
-```
-
-Regist PYTHONPATH.  
-```
-export PYTHONPATH=$(pwd):$(pwd)/tensorflow_models:$(pwd)/tensorflow_models/research
+git clone https://github.com/shi510/tf2-edgetpu-examples
+docker build --tag tf2-edgetpu-examples tf2-edgetpu-examples/docker
 ```
 
-Install python packages.  
+## 2. Build your dataset
+You have image_list.json file with the format (json) as below.  
 ```
-pip install pillow tf_slim scipy matplotlib pyyaml dataclasses
+{
+    "train/image1.jpg":{
+        "detection_label":{
+            "class_ids": [0, 1],
+            "box_list": [[0.591, 0.436, 0.712, 0.629], [0.414, 0.464, 0.548, 0.626]]
+        }
+    },
+    "train/image2.jpg":{
+        "detection_label":{
+            "class_ids": [2],
+            "box_list": [[0.583, 0.539, 0.710, 0.730]]
+        }
+    },
+  ...
+}
+```
+The `key` is a relative path of an image.   
+The `value` contains a dict which has a 'detection_label' key.  
+The 'detection_label' key has class labels and bounding boxes.  
+The bounding box has an order as [x_min, y_min, x_max, y_max].  
+
+## 3. Convert the json file into TFRECORD
+Input pipeline bottleneck increases training time.  
+Reading data from a large file sequentially is better than reading a lot of small sized data randomly.  
+Try the command below, it generates [name.tfrecord] file from the above json file.  
+```
+python generate_tfrecord/main.py --root_path [path] --json_file [path] --output [name.tfrecord]
 ```
 
-Install Protoc.  
+## 4. Train on your dataset
+Modify train/config.py.  
 ```
-wget https://github.com/protocolbuffers/protobuf/releases/download/v3.17.0/protoc-3.17.0-linux-x86_64.zip
-unzip protoc-3.17.0-linux-x86_64.zip -d protoc-3.17.0-linux-x86_64
-cp protoc-3.17.0-linux-x86_64/bin/protoc /usr/local/bin/
+'num_classes': 1,
+'train_file': 'path/your_train.tfrecord',
+'test_file': 'path/your_test.tfrecord',
 ```
-
-Install edgetpu compiler and utilities.  
+If you have problems on out of GPU memory, try to decrease `batch_size` and to increase `num_grad_accum`.  
+Total batch size is `batch_size` * `num_grad_accum` = 512.  
 ```
-curl -s -N https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
-sudo apt update
-sudo apt install edgetpu-compiler wget zip
-```
-
-Generate python files from proto files.  
-```
-protoc --proto_path=tensorflow_models/research tensorflow_models/research/object_detection/protos/*.proto --python_out=tensorflow_models/research
-```
-
-Prepare pretrained model.  
-```
-mkdir -p pretrained/ssd_mobilenet_v2_320x320_coco17_tpu-8
-wget http://download.tensorflow.org/models/object_detection/tf2/20200711/ssd_mobilenet_v2_320x320_coco17_tpu-8.tar.gz
-tar -xf ssd_mobilenet_v2_320x320_coco17_tpu-8.tar.gz
-mv ssd_mobilenet_v2_320x320_coco17_tpu-8 pretrained_models/
+'batch_size' : 16,
+'num_grad_accum': 32,
 ```
