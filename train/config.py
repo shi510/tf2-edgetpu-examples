@@ -28,5 +28,5 @@ config = {
     'learning_rate' : 1e-4,
 
     'train_file': 'your_train.tfrecord',
-    'test_files': 'your_test.tfrecord',
+    'test_file': 'your_test.tfrecord',
 }
