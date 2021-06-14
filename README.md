@@ -5,6 +5,7 @@ See docker/Dockerfile.
 ```
 git clone https://github.com/shi510/tf2-edgetpu-examples
 docker build --tag tf2-edgetpu-examples tf2-edgetpu-examples/docker
+docker run -it -v /host/dataset_dir:/root/dataset_dir --name edgetpu-test --gpus all edgetpu-test /bin/bash
 ```
 
 ## 2. Build your dataset
@@ -51,4 +52,8 @@ Total batch size is `batch_size` * `num_grad_accum` = 512.
 ```
 'batch_size' : 16,
 'num_grad_accum': 32,
+```
+Then train your model.  
+```
+python train/main.py
 ```

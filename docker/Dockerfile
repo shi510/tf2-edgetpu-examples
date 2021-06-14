@@ -7,7 +7,7 @@ RUN curl -s -N https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key a
 RUN echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" | tee /etc/apt/sources.list.d/coral-edgetpu.list
 RUN apt-get update
 RUN apt-get install -y wget zip git edgetpu-compiler
-RUN pip install pillow tf_slim scipy matplotlib pyyaml dataclasses
+RUN pip install pillow tf_slim tensorflow_addons scipy matplotlib pyyaml dataclasses
 
 # Clone main repository
 RUN git clone https://github.com/shi510/tf2-edgetpu-examples
@@ -23,5 +23,8 @@ RUN git clone https://github.com/tensorflow/models tensorflow_models
 RUN cd tensorflow_models && git checkout 927e31aa1de2d23fd62b7b2644b67b29d658b944
 
 # Generate proto files
-WORKDIR $HOME/tf2-edgetpu-examples
 RUN protoc --proto_path=tensorflow_models/research tensorflow_models/research/object_detection/protos/*.proto --python_out=tensorflow_models/research
+
+# Regist PYTHONPATH
+ENV PROJECT_ROOT ${HOME}/tf2-edgetpu-examples
+ENV PYTHONPATH ${PROJECT_ROOT}:${PROJECT_ROOT}/tensorflow_models:${PROJECT_ROOT}/tensorflow_models/research
