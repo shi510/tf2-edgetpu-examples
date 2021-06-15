@@ -10,7 +10,10 @@ config = train.config.config
 tf.keras.backend.clear_session()
 
 detection_model = train.builder.build(
-    config['model_type'], config['input_shape'], config['num_classes'])
+    config['model_type'],
+    config['input_shape'],
+    config['num_classes'],
+    config['checkpoint'])
 
 tf.keras.backend.set_learning_phase(True)
 

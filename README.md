@@ -1,8 +1,8 @@
 # tf2-edgetpu-examples
 
 ## 0. Environments
-(1) tensorflow v2.5.0
-(2) nvidia cuda v11.3
+(1) tensorflow v2.5.0  
+(2) nvidia cuda v11.3  
 
 ## 1. Build docker image
 See docker/Dockerfile.  
