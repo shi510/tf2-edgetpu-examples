@@ -2,8 +2,12 @@ from train.input_pipeline import make_tfdataset
 import train.builder
 import train.config
 from train.custom_model import CustomDetectorModel
+from train.custom_callback import LogCallback
+from train.custom_callback import DetectorCheckpoint
 
 import tensorflow as tf
+from tensorflow.keras.callbacks import ReduceLROnPlateau
+from tensorflow.keras.callbacks import EarlyStopping
 
 config = train.config.config
 
@@ -28,4 +32,13 @@ train_ds = make_tfdataset(config['train_file'], batch_size, config['input_shape'
 custom_model = CustomDetectorModel(
     detection_model, config['input_shape'], config['num_grad_accum'])
 custom_model.compile(optimizer=optimizer, run_eagerly=True)
-custom_model.fit(train_ds, epochs=config['epoch'])
+
+checkpoint_dir = './checkpoints/{}/best'.format(config['model_name'])
+callbacks = [
+    LogCallback('./logs/'+config['model_name']),
+    DetectorCheckpoint(detection_model, monitor='loss', checkpoint_dir=checkpoint_dir),
+    ReduceLROnPlateau(monitor='loss', factor=0.1, mode='min', patience=2, min_lr=1e-5, verbose=1),
+    EarlyStopping(monitor='loss', mode='min', patience=5, restore_best_weights=True)]
+
+custom_model.fit(train_ds, epochs=config['epoch'], callbacks=callbacks)
+
