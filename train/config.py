@@ -3,9 +3,14 @@ config = {
 
     'checkpoint': '',
 
+    'batch_size' : 128,
+    'num_grad_accum': 4,
+    'epoch' : 100,
     #
     # Shape order is [Height, Width, Channel].
     #
+    'input_shape' : [224, 224, 3],
+    'num_classes': 1,
 
     #
     # Choose one of below:

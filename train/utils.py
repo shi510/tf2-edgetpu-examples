@@ -41,7 +41,7 @@ class GradientAccumulatorModel(tf.keras.Model):
             self.grad_accum[i].assign(tf.zeros_like(self.trainable_variables[i], dtype=tf.float32))
 
 
-def export_tflite_graph(pipeline_config_path, checkpoint_path, output_directory):
+def export_tflite_graph(pipeline_config_path, checkpoint_path):
     pipeline_config = pipeline_pb2.TrainEvalPipelineConfig()
     max_detections = 10
     config_override = ''
@@ -57,6 +57,6 @@ def export_tflite_graph(pipeline_config_path, checkpoint_path, output_directory)
     pipeline_config.MergeFrom(override_config)
 
     export_tflite_graph_lib_tf2.export_tflite_model(
-        pipeline_config, checkpoint_path, output_directory,
+        pipeline_config, checkpoint_path, checkpoint_path,
         max_detections, ssd_use_regular_nms,
         centernet_include_keypoints, keypoint_label_map_path)

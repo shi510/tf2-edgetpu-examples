@@ -18,10 +18,10 @@ def convert_tflite_int8(saved_model_path, calb_data, output_name, quant_level=0)
     converter = tf.lite.TFLiteConverter.from_saved_model(saved_model_path)
     converter.optimizations = [tf.lite.Optimize.DEFAULT]
     def representative_dataset_gen():
-        for n, data in enumerate(calb_data.take(100)):
+        for n, data in enumerate(calb_data.take(1000)):
             x = data[0]
-            if n % 100 == 0:
-                print(n)
+            if n % 10 == 0:
+                print(n, 'images are processed.')
             # Get sample input data as a numpy array in a method of your choosing.
             # The batch size should be 1.
             # So the shape of the x should be (1, height, width, channel)

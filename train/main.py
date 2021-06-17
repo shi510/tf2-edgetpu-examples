@@ -1,4 +1,5 @@
 import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 from train.input_pipeline import make_tfdataset
 import train.builder
@@ -63,14 +64,19 @@ try:
 except OSError:
     print("Error: Cannot create the directory {}".format(meta_info_path))
 
-custom_model.fit(
-    train_ds,
-    validation_data=test_ds,
-    epochs=config['epoch'],
-    callbacks=callbacks)
+try:
+    custom_model.fit(
+        train_ds,
+        validation_data=test_ds,
+        epochs=config['epoch'],
+        callbacks=callbacks)
+except KeyboardInterrupt:
+    print()
+    print('============================================')
+    print('         Training is canceled.')
+    print('============================================')
+    print()
 
-export_tflite_graph(
-    meta_info_path+'/meta_info.config',
-    meta_info_path,
-    meta_info_path)
+export_tflite_graph(meta_info_path+'/meta_info.config', meta_info_path)
+
 
