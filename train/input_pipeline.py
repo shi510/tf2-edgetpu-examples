@@ -72,7 +72,7 @@ def make_tfdataset(tfrecord_file_path, batch_size, img_shape):
         return imgs, labels, boxes
 
     ds = ds.map(_read_tfrecord)
-    # ds = ds.shuffle(5000)
+    ds = ds.shuffle(1000)
     ds = ds.batch(batch_size)
     # ds = ds.map(map_eager_decorator(_preprocess))
     ds = ds.map(_preprocess_images)

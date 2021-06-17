@@ -6,6 +6,7 @@ import train.config
 from train.custom_model import CustomDetectorModel
 from train.custom_callback import LogCallback
 from train.custom_callback import DetectorCheckpoint
+from train.utils import export_tflite_graph
 
 import tensorflow as tf
 from tensorflow.keras.callbacks import ReduceLROnPlateau
@@ -55,4 +56,9 @@ except OSError:
     print("Error: Cannot create the directory {}".format(meta_info_path))
 
 custom_model.fit(train_ds, epochs=config['epoch'], callbacks=callbacks)
+
+export_tflite_graph(
+    meta_info_path+'/meta_info.config',
+    meta_info_path,
+    meta_info_path)
 

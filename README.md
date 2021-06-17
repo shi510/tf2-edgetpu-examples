@@ -41,7 +41,7 @@ Input pipeline bottleneck increases training time.
 Reading data from a large file sequentially is better than reading a lot of small sized data randomly.  
 Try the command below, it generates [name.tfrecord] file from the above json file.  
 ```
-python generate_tfrecord/main.py --root_path [path] --json_file [path] --output [name.tfrecord]
+python convert_tfrecord/main.py --root_path [path] --json_file [path] --output [name.tfrecord]
 ```
 
 ## 4. Train on your dataset
