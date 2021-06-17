@@ -1,3 +1,5 @@
+import os
+
 from train.input_pipeline import make_tfdataset
 import train.builder
 import train.config
@@ -13,7 +15,7 @@ config = train.config.config
 
 tf.keras.backend.clear_session()
 
-detection_model = train.builder.build(
+detection_model, model_config = train.builder.build(
     config['model_type'],
     config['input_shape'],
     config['num_classes'],
@@ -42,6 +44,15 @@ callbacks = [
     DetectorCheckpoint(detection_model, monitor='loss', checkpoint_dir=checkpoint_dir),
     ReduceLROnPlateau(monitor='loss', factor=0.1, mode='min', patience=2, min_lr=1e-5, verbose=1),
     EarlyStopping(monitor='loss', mode='min', patience=5, restore_best_weights=True)]
+
+meta_info_path = './checkpoints/{}'
+meta_info_path = meta_info_path.format(config['model_name'])
+try:
+    os.makedirs(meta_info_path, exist_ok=True)
+    with open(meta_info_path+'/meta_info.config', 'w') as f:
+        f.write('model{'+str(model_config)+'}')
+except OSError:
+    print("Error: Cannot create the directory {}".format(meta_info_path))
 
 custom_model.fit(train_ds, epochs=config['epoch'], callbacks=callbacks)
 

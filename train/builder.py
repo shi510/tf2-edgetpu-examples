@@ -47,4 +47,4 @@ def build(model_type, input_shape, num_classes, checkpoint_path=''):
     _ = detection_model.postprocess(prediction_dict, shapes)
     print('Weights restored!')
 
-    return detection_model
+    return detection_model, model_config
