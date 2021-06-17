@@ -47,9 +47,11 @@ python convert_tfrecord/main.py --root_path [path] --json_file [path] --output [
 ## 4. Train on your dataset
 Modify train/config.py.  
 ```
+'model_name': 'your_model_name',
 'num_classes': 1,
 'train_file': 'path/your_train.tfrecord',
 'test_file': 'path/your_test.tfrecord',
+'input_shape' : [224, 224, 3],
 ```
 If you have problems on out of GPU memory, try to decrease `batch_size` and to increase `num_grad_accum`.  
 Total batch size is `batch_size` * `num_grad_accum` = 512.  
@@ -60,4 +62,25 @@ Total batch size is `batch_size` * `num_grad_accum` = 512.
 Then train your model.  
 ```
 python train/main.py
+```
+
+## 5. Convert saved model to tflite model
+You have `checkpoints/your_model_name/saved_model` folder after training is finished.  
+To convert to tflite model, Try the command below.  
+It generates `your_model_name.tflite` file.  
+```
+python convert_tflite/main.py \
+—saved_model checkpoints/your_model_name/saved_model \
+—dataset your_train.tfrecord \
+—image_size 224,224 \
+—quant_level 2 \
+—output your_model_name.tflite
+```
+
+## 6. Compile tflite model for edgetpu
+You should compile your tflite model for efficient inference on edgetpu.  
+It generated `your_model_name_edgetpu.tflite` file.  
+See [inference_examples/inference_on_edgetpu.py](inference_examples/inference_on_edgetpu.py).  
+```
+edgetpu_compiler your_model_name.tflite
 ```
