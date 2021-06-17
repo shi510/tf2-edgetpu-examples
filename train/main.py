@@ -30,7 +30,10 @@ num_batches = config['batch_size']
 
 optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
 
-train_ds = make_tfdataset(config['train_file'], batch_size, config['input_shape'][:2])
+train_ds, test_ds = make_tfdataset(
+    config['train_file'],
+    config['test_file'],
+    batch_size, config['input_shape'][:2])
 
 custom_model = CustomDetectorModel(
     detection_model,
@@ -42,9 +45,9 @@ custom_model.compile(optimizer=optimizer, run_eagerly=True)
 checkpoint_dir = './checkpoints/{}/best'.format(config['model_name'])
 callbacks = [
     LogCallback('./logs/'+config['model_name']),
-    DetectorCheckpoint(detection_model, monitor='loss', checkpoint_dir=checkpoint_dir),
-    ReduceLROnPlateau(monitor='loss', factor=0.1, mode='min', patience=2, min_lr=1e-5, verbose=1),
-    EarlyStopping(monitor='loss', mode='min', patience=5, restore_best_weights=True)]
+    DetectorCheckpoint(detection_model, monitor='val_loss', checkpoint_dir=checkpoint_dir),
+    ReduceLROnPlateau(monitor='val_loss', factor=0.1, mode='min', patience=2, min_lr=1e-5, verbose=1),
+    EarlyStopping(monitor='val_loss', mode='min', patience=5, restore_best_weights=True)]
 
 meta_info_path = './checkpoints/{}'
 meta_info_path = meta_info_path.format(config['model_name'])
@@ -55,7 +58,11 @@ try:
 except OSError:
     print("Error: Cannot create the directory {}".format(meta_info_path))
 
-custom_model.fit(train_ds, epochs=config['epoch'], callbacks=callbacks)
+custom_model.fit(
+    train_ds,
+    validation_data=test_ds,
+    epochs=config['epoch'],
+    callbacks=callbacks)
 
 export_tflite_graph(
     meta_info_path+'/meta_info.config',

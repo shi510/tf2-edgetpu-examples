@@ -14,6 +14,10 @@ class CustomDetectorModel(GradientAccumulatorModel):
         self.cls_loss_tracker = tf.keras.metrics.Mean(name='cls_loss')
         self.loc_loss_tracker = tf.keras.metrics.Mean(name='loc_loss')
 
+        self.val_loss_tracker = tf.keras.metrics.Mean(name='loss')
+        self.val_cls_loss_tracker = tf.keras.metrics.Mean(name='cls_loss')
+        self.val_loc_loss_tracker = tf.keras.metrics.Mean(name='loc_loss')
+
     def compile(self, **kargs):
         super(CustomDetectorModel, self).compile(**kargs)
 
@@ -44,6 +48,29 @@ class CustomDetectorModel(GradientAccumulatorModel):
         return {'loss': self.loss_tracker.result(),
             self.cls_loss_tracker.name: self.cls_loss_tracker.result(),
             self.loc_loss_tracker.name: self.loc_loss_tracker.result()}
+
+
+    def test_step(self, data):
+        imgs, labels, boxes = data
+        labels = tf.one_hot(tf.cast(labels, tf.int32), self.num_classes)
+        labels = [tf.expand_dims(x, 0) for x in labels]
+        boxes = [tf.expand_dims(x, 0) for x in boxes]
+        batch_size = len(labels)
+        shapes = tf.constant(batch_size * [self.this_input_shape], dtype=tf.int32)
+        self.detection_model.provide_groundtruth(
+            groundtruth_boxes_list=boxes,
+            groundtruth_classes_list=labels)
+        prediction_dict = self([imgs, shapes], training=True)
+        losses_dict = self.detection_model.loss(prediction_dict, shapes)
+        total_loss = losses_dict['Loss/localization_loss'] + losses_dict['Loss/classification_loss']
+        self.val_loss_tracker.update_state(total_loss)
+        self.val_cls_loss_tracker.update_state(losses_dict['Loss/classification_loss'])
+        self.val_loc_loss_tracker.update_state(losses_dict['Loss/localization_loss'])
+        test_logs = {
+            self.val_loss_tracker.name: self.val_loss_tracker.result(),
+            self.val_cls_loss_tracker.name: self.val_cls_loss_tracker.result(),
+            self.val_loc_loss_tracker.name: self.val_loc_loss_tracker.result()}
+        return test_logs
 
     @property
     def metrics(self):

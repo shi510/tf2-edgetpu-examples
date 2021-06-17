@@ -29,8 +29,8 @@ def blur(x):
 
     return tf.cond(choice > 0.5, lambda: gfilter(x), lambda: mfilter(x))
 
-def make_tfdataset(tfrecord_file_path, batch_size, img_shape):
-    ds = tf.data.TFRecordDataset(tfrecord_file_path)
+def make_tfdataset(train_tfrecord_path, test_tfrecord_path, batch_size, img_shape):
+    train_ds = tf.data.TFRecordDataset(train_tfrecord_path)
 
     def _read_tfrecord(serialized):
         description = {
@@ -71,17 +71,23 @@ def make_tfdataset(tfrecord_file_path, batch_size, img_shape):
         imgs = (2.0 / 255.0) * imgs - 1.0
         return imgs, labels, boxes
 
-    ds = ds.map(_read_tfrecord)
-    ds = ds.shuffle(1000)
-    ds = ds.batch(batch_size)
-    # ds = ds.map(map_eager_decorator(_preprocess))
-    ds = ds.map(_preprocess_images)
+    train_ds = train_ds.map(_read_tfrecord)
+    train_ds = train_ds.shuffle(1000)
+    train_ds = train_ds.batch(batch_size)
+    # train_ds = train_ds.map(map_eager_decorator(_preprocess))
+    train_ds = train_ds.map(_preprocess_images)
     augmentations = [random_color, gray, blur]
     for f in augmentations:
         choice = tf.random.uniform([], 0.0, 1.0)
-        ds = ds.map(lambda img, label, box: (tf.cond(choice > 0.5, lambda: f(img), lambda: img), label, box),
+        train_ds = train_ds.map(lambda img, label, box: (tf.cond(choice > 0.5, lambda: f(img), lambda: img), label, box),
             num_parallel_calls=TF_AUTOTUNE)
-    # ds = ds.map(lambda img, label, box: (tf.clip_by_value(img, 0., 1.), label, box), num_parallel_calls=TF_AUTOTUNE)
-    ds = ds.prefetch(TF_AUTOTUNE)
+    # train_ds = train_ds.map(lambda img, label, box: (tf.clip_by_value(img, 0., 1.), label, box), num_parallel_calls=TF_AUTOTUNE)
+    train_ds = train_ds.prefetch(TF_AUTOTUNE)
 
-    return ds
+    test_ds = tf.data.TFRecordDataset(test_tfrecord_path)
+    test_ds = test_ds.map(_read_tfrecord)
+    test_ds = test_ds.batch(batch_size)
+    test_ds = test_ds.map(_preprocess_images)
+    test_ds = test_ds.prefetch(TF_AUTOTUNE)
+
+    return train_ds, test_ds
