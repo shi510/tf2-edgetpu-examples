@@ -47,7 +47,7 @@ if __name__ == '__main__':
     parser.add_argument('--dataset', type=str, required=True,
         help='calibration dataset (tfrecord)')
     parser.add_argument('--image_size', type=str, required=True,
-        help='image width and height. ex) 112,112')
+        help='image height and width. ex) 112,112')
     parser.add_argument('--quant_level', type=int, required=False,
         default=0, help='quantization level 0 ~ 2')
     parser.add_argument('--output', type=str, required=True,

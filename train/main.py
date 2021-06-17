@@ -30,10 +30,15 @@ num_batches = config['batch_size']
 
 optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
 
-train_ds, test_ds = make_tfdataset(
+train_ds = make_tfdataset(
     config['train_file'],
+    batch_size,
+    config['input_shape'][:2],
+    enable_aug=True)
+test_ds = make_tfdataset(
     config['test_file'],
-    batch_size, config['input_shape'][:2])
+    batch_size,
+    config['input_shape'][:2])
 
 custom_model = CustomDetectorModel(
     detection_model,

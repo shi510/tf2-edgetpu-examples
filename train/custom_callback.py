@@ -23,12 +23,7 @@ class DetectorCheckpoint(tf.keras.callbacks.Callback):
     def __init__(self, detection_model, monitor='loss', checkpoint_dir='./checkpoints'):
         super(DetectorCheckpoint, self).__init__()
         self.ckpt_dir = checkpoint_dir
-        box_heads_ckpt = tf.compat.v2.train.Checkpoint(
-            _prediction_heads=detection_model._box_predictor._prediction_heads)
-        detection_model_ckpt = tf.compat.v2.train.Checkpoint(
-                _feature_extractor=detection_model._feature_extractor,
-                _box_predictor=box_heads_ckpt)
-        self.ckpt = tf.compat.v2.train.Checkpoint(model=detection_model_ckpt)
+        self.ckpt = tf.train.Checkpoint(model=detection_model)
         self.monitor = monitor
         self.monitor_val = np.Inf
 
