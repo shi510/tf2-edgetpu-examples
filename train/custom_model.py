@@ -5,10 +5,11 @@ import tensorflow as tf
 
 class CustomDetectorModel(GradientAccumulatorModel):
 
-    def __init__(self, detection_model, input_shape, num_grad_accum=1, **kargs):
+    def __init__(self, detection_model, input_shape, num_classes, num_grad_accum=1, **kargs):
         super(CustomDetectorModel, self).__init__(num_accum=num_grad_accum, **kargs)
         self.detection_model = detection_model
         self.this_input_shape = input_shape
+        self.num_classes = num_classes
         self.loss_tracker = tf.keras.metrics.Mean(name='loss')
         self.cls_loss_tracker = tf.keras.metrics.Mean(name='cls_loss')
         self.loc_loss_tracker = tf.keras.metrics.Mean(name='loc_loss')
@@ -23,7 +24,7 @@ class CustomDetectorModel(GradientAccumulatorModel):
 
     def train_step(self, data):
         imgs, labels, boxes = data
-        labels = tf.one_hot(tf.cast(labels, tf.int32), 1)
+        labels = tf.one_hot(tf.cast(labels, tf.int32), self.num_classes)
         labels = [tf.expand_dims(x, 0) for x in labels]
         boxes = [tf.expand_dims(x, 0) for x in boxes]
         batch_size = len(labels)

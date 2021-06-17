@@ -30,7 +30,10 @@ optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
 train_ds = make_tfdataset(config['train_file'], batch_size, config['input_shape'][:2])
 
 custom_model = CustomDetectorModel(
-    detection_model, config['input_shape'], config['num_grad_accum'])
+    detection_model,
+    config['input_shape'],
+    config['num_classes'],
+    config['num_grad_accum'])
 custom_model.compile(optimizer=optimizer, run_eagerly=True)
 
 checkpoint_dir = './checkpoints/{}/best'.format(config['model_name'])
