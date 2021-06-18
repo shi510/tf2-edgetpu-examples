@@ -1,9 +1,9 @@
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-from train.input_pipeline import make_tfdataset
 import train.builder
 import train.config
+from train.input_pipeline import make_tfdataset
 from train.custom_model import CustomDetectorModel
 from train.custom_callback import LogCallback
 from train.custom_callback import DetectorCheckpoint
