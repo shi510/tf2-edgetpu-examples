@@ -68,11 +68,12 @@ def make_tfdataset(tfrecord_path, batch_size, img_shape, enable_aug=False):
         return imgs, labels, boxes
 
     def _preprocess_images(imgs, labels, boxes):
-        imgs = (2.0 / 255.0) * imgs - 1.0
+        # imgs = (2.0 / 255.0) * imgs - 1.0
+        imgs = imgs / 255.0
         return imgs, labels, boxes
 
     ds = ds.map(_read_tfrecord)
-    ds = ds.shuffle(1000)
+    ds = ds.shuffle(10000)
     ds = ds.batch(batch_size)
     # ds = ds.map(map_eager_decorator(_preprocess))
     ds = ds.map(_preprocess_images)
@@ -82,7 +83,7 @@ def make_tfdataset(tfrecord_path, batch_size, img_shape, enable_aug=False):
             choice = tf.random.uniform([], 0.0, 1.0)
             ds = ds.map(lambda img, label, box: (tf.cond(choice > 0.5, lambda: f(img), lambda: img), label, box),
                 num_parallel_calls=TF_AUTOTUNE)
-        # ds = ds.map(lambda img, label, box: (tf.clip_by_value(img, 0., 1.), label, box), num_parallel_calls=TF_AUTOTUNE)
+        ds = ds.map(lambda img, label, box: (tf.clip_by_value(img, 0., 1.), label, box), num_parallel_calls=TF_AUTOTUNE)
     ds = ds.prefetch(TF_AUTOTUNE)
 
     return ds

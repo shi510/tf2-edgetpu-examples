@@ -50,9 +50,9 @@ custom_model.compile(optimizer=optimizer, run_eagerly=True)
 
 checkpoint_dir = './checkpoints/{}/best'.format(config['model_name'])
 callbacks = [
-    LogCallback('./logs/'+config['model_name']),
     DetectorCheckpoint(detection_model, monitor='val_loss', checkpoint_dir=checkpoint_dir),
     ReduceLROnPlateau(monitor='val_loss', factor=0.1, mode='min', patience=2, min_lr=1e-5, verbose=1),
+    LogCallback('./logs/'+config['model_name']),
     EarlyStopping(monitor='val_loss', mode='min', patience=5, restore_best_weights=True)]
 
 meta_info_path = './checkpoints/{}'

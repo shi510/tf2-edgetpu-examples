@@ -26,17 +26,18 @@ def build(model_type, input_shape, num_classes, checkpoint_path=''):
     model_config.ssd.image_resizer.fixed_shape_resizer.width = input_shape[1]
     detection_model = model_builder.build(model_config=model_config, is_training=True)
 
-    ckpt = tf.train.Checkpoint(model=detection_model)
-    manager = tf.train.CheckpointManager(
-        ckpt, checkpoint_path, max_to_keep=1)
-    if manager.latest_checkpoint is not None:
-        ckpt.restore(manager.latest_checkpoint)
-    else:
-        print()
-        print('============================================')
-        print('You gave checkpoint path, but not exists. -> {}'.format(checkpoint_path))
-        print('============================================')
-        print()
+    if os.path.exists(checkpoint_path):
+        ckpt = tf.train.Checkpoint(model=detection_model)
+        manager = tf.train.CheckpointManager(
+            ckpt, checkpoint_path, max_to_keep=1)
+        if manager.latest_checkpoint is not None:
+            ckpt.restore(manager.latest_checkpoint)
+        else:
+            print()
+            print('============================================')
+            print('You gave checkpoint path, but not exists. -> {}'.format(checkpoint_path))
+            print('============================================')
+            print()
 
     # Run model through a dummy image so that variables are created
     image, shapes = detection_model.preprocess(tf.zeros([1] + input_shape))

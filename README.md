@@ -70,11 +70,11 @@ To convert to tflite model, Try the command below.
 It generates `your_model_name.tflite` file.  
 ```
 python convert_tflite/main.py \
-—saved_model checkpoints/your_model_name/saved_model \
-—dataset your_train.tfrecord \
-—image_size 224,224 \
-—quant_level 2 \
-—output your_model_name.tflite
+--saved_model checkpoints/your_model_name/saved_model \
+--dataset your_train.tfrecord \
+--image_size 224,224 \
+--quant_level 2 \
+--output your_model_name.tflite
 ```
 
 ## 6. Compile tflite model for edgetpu
