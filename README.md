@@ -61,6 +61,7 @@ Total batch size is `batch_size` * `num_grad_accum` = 512.
 ```
 Then train your model.  
 ```
+export PYTHONPATH=$(pwd):$(pwd)/tensorflow_models/research:$(pwd)/tensorflow_models
 python train/main.py
 ```
 
