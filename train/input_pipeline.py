@@ -73,8 +73,8 @@ def make_tfdataset(tfrecord_path, batch_size, img_shape, enable_aug=False):
         imgs = imgs / 255.0
         return imgs, labels, boxes
 
-    ds = ds.map(_read_tfrecord)
     ds = ds.shuffle(10000)
+    ds = ds.map(_read_tfrecord)
     ds = ds.apply(tf.data.experimental.dense_to_ragged_batch(batch_size=batch_size))
     # ds = ds.map(map_eager_decorator(_preprocess))
     ds = ds.map(_preprocess_images)
