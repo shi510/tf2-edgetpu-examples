@@ -1,10 +1,20 @@
 # tf2-edgetpu-examples
 
-## 0. Environments
+## Index
+1. [Environments](#Environments)
+2. [Build docker image](#Build-docker-image)
+3. [Build your dataset](#Build-your-dataset)
+4. [Convert the json file into TFRECORD](#Convert-the-json-file-into-TFRECORD)
+5. [Train on your dataset](#Train-on-your-dataset)
+6. [Convert saved model to tflite model](#Convert-saved-model-to-tflite-model)
+7. [Compile tflite model for edgetpu](#Compile-tflite-model-for-edgetpu)
+8. [How to custom your own model](#How-to-custom-your-own-model)
+
+## Environments
 (1) tensorflow v2.5.0  
 (2) nvidia cuda v11.3  
 
-## 1. Build docker image
+## Build docker image
 See docker/Dockerfile.  
 ```
 git clone https://github.com/shi510/tf2-edgetpu-examples
@@ -12,7 +22,7 @@ docker build --tag tf2-edgetpu-examples tf2-edgetpu-examples/docker
 docker run -it -v /host/dataset_dir:/root/dataset_dir --name edgetpu-test --gpus all edgetpu-test /bin/bash
 ```
 
-## 2. Build your dataset
+## Build your dataset
 You have image_list.json file with the format (json) as below.  
 ```
 {
@@ -36,7 +46,7 @@ The `value` contains a dict which has a 'detection_label' key.
 The 'detection_label' key has class labels and bounding boxes.  
 The bounding box has an order as [x_min, y_min, x_max, y_max].  
 
-## 3. Convert the json file into TFRECORD
+## Convert the json file into TFRECORD
 Input pipeline bottleneck increases training time.  
 Reading data from a large file sequentially is better than reading a lot of small sized data randomly.  
 Try the command below, it generates [name.tfrecord] file from the above json file.  
@@ -44,7 +54,7 @@ Try the command below, it generates [name.tfrecord] file from the above json fil
 python convert_tfrecord/main.py --root_path [path] --json_file [path] --output [name.tfrecord]
 ```
 
-## 4. Train on your dataset
+## Train on your dataset
 Modify train/config.py.  
 ```
 'model_name': 'your_model_name',
@@ -65,7 +75,7 @@ export PYTHONPATH=$(pwd):$(pwd)/tensorflow_models/research:$(pwd)/tensorflow_mod
 python train/main.py
 ```
 
-## 5. Convert saved model to tflite model
+## Convert saved model to tflite model
 You have `checkpoints/your_model_name/saved_model` folder after training is finished.  
 To convert to tflite model, Try the command below.  
 It generates `your_model_name.tflite` file.  
@@ -78,7 +88,7 @@ python convert_tflite/main.py \
 --output your_model_name.tflite
 ```
 
-## 6. Compile tflite model for edgetpu
+## Compile tflite model for edgetpu
 You should compile your tflite model for efficient inference on edgetpu.  
 It generated `your_model_name_edgetpu.tflite` file.  
 See [inference_examples/inference_on_edgetpu.py](inference_examples/inference_on_edgetpu.py).  
@@ -86,7 +96,7 @@ See [inference_examples/inference_on_edgetpu.py](inference_examples/inference_on
 edgetpu_compiler your_model_name.tflite
 ```
 
-## 7. How to custom your own model
+## How to custom your own model
 First change your directory to tensorflow_models/research/object_detection.  
 Clone mobilenet implementations.  
 ```
@@ -177,20 +187,25 @@ Finally, you have to register your model to model builder.
 Open builders/model_builder.py.  
 Import your feature extractor.  
 ```python
-from object_detection.models.ssd_my_model_keras_feature_extractor import SSDMyModelKerasFeatureExtractor
+if tf_version.is_tf2():
+    from object_detection.models.ssd_my_model_keras_feature_extractor import SSDMyModelKerasFeatureExtractor
 
 if tf_version.is_tf2():
   SSD_KERAS_FEATURE_EXTRACTOR_CLASS_MAP = {
       'ssd_mobilenet_v1_keras': SSDMobileNetV1KerasFeatureExtractor,
       'ssd_mobilenet_v1_fpn_keras': SSDMobileNetV1FpnKerasFeatureExtractor,
       'ssd_mobilenet_v2_keras': SSDMobileNetV2KerasFeatureExtractor,
-      'ssd_my_model_keras': SSDMyModelKerasFeatureExtractor,
+      'ssd_my_model_keras': SSDMyModelKerasFeatureExtractor, # <- here
 ```
 
 Change directory to this repository root.  
-Open pretrained_models/ssd_mobilenet_v2_320x320_coco17_tpu-8.config.  
-Change feature_extractor.type to your model name.  
+Open train/config.py.  
+Change feature_extractor to your model name.  
 ```
-    feature_extractor {
-      type: 'ssd_my_model_keras'
+'meta_info':{
+    #
+    # If an empty string, it is built based on 'model_type'.
+    # It is used for a custom feature extractor.
+    #
+    'feature_extractor': 'ssd_my_model_keras',
 ```
