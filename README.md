@@ -85,3 +85,112 @@ See [inference_examples/inference_on_edgetpu.py](inference_examples/inference_on
 ```
 edgetpu_compiler your_model_name.tflite
 ```
+
+## 7. How to custom your own model
+First change your directory to tensorflow_models/research/object_detection.  
+Clone mobilenet implementations.  
+```
+cp models/ssd_mobilenet_v2_keras_feature_extractor.py \
+models/ssd_my_model_keras_feature_extractor.py
+```
+
+Specify the options.  
+The 'from_layer' is where the layer gets from.  
+If a layer name is left as an empty string, constructs a new feature map
+using convolution of stride 2 resulting in a spatial resolution reduction by a factor of 2.
+
+```python
+self._feature_map_layout = {
+    'from_layer': ['layer_15/expansion_output', 'layer_19', 'layer_21', '', '', ''
+                    ][:self._num_layers],
+    'layer_depth': [-1, -1, -1, 512, 256, 128][:self._num_layers],
+    'use_depthwise': self._use_depthwise,
+    'use_explicit_padding': self._use_explicit_padding,
+}
+```
+
+Build your backbone model that outputs multiple resolution feature maps as you specified in the above options.  
+```python
+def build(self, input_shape):
+    # Clone existing backbone or implement your model from scratch.
+    full_mobilenet_v2 = mobilenet_v2.mobilenet_v2(
+        batchnorm_training=(self._is_training and not self._freeze_batchnorm),
+        conv_hyperparams=(self._conv_hyperparams
+                            if self._override_base_feature_extractor_hyperparams
+                            else None),
+        weights=None,
+        use_explicit_padding=self._use_explicit_padding,
+        alpha=self._depth_multiplier,
+        min_depth=self._min_depth,
+        include_top=False)
+    y1 = full_mobilenet_v2.get_layer(name='block_3_expand').output
+    y2 = full_mobilenet_v2.get_layer(name='block_6_expand').output
+    y3 = full_mobilenet_v2.get_layer(name='block_10_expand').output
+    # The custom model results in 3 outputs.
+    self.classification_backbone = tf.keras.Model(
+        inputs=full_mobilenet_v2.inputs,
+        outputs=[y1, y2, y3])
+
+    # Then generate multi-resolution feature maps based on your above configurations.
+    self.feature_map_generator = (
+        feature_map_generators.KerasMultiResolutionFeatureMaps(
+            feature_map_layout=self._feature_map_layout,
+            depth_multiplier=self._depth_multiplier,
+            min_depth=self._min_depth,
+            insert_1x1_conv=True,
+            is_training=self._is_training,
+            conv_hyperparams=self._conv_hyperparams,
+            freeze_batchnorm=self._freeze_batchnorm,
+            name='FeatureMaps'))
+    self.built = True
+```
+
+Return multiple feature maps as you set your model's outputs.  
+```python
+  def _extract_features(self, preprocessed_inputs):
+    """Extract features from preprocessed inputs.
+
+    Args:
+      preprocessed_inputs: a [batch, height, width, channels] float tensor
+        representing a batch of images.
+
+    Returns:
+      feature_maps: a list of tensors where the ith tensor has shape
+        [batch, height_i, width_i, depth_i]
+    """
+    preprocessed_inputs = shape_utils.check_min_image_dim(
+        33, preprocessed_inputs)
+
+    image_features = self.classification_backbone(
+        ops.pad_to_multiple(preprocessed_inputs, self._pad_to_multiple))
+
+    feature_maps = self.feature_map_generator({
+        'layer_15/expansion_output': image_features[0],
+        'layer_19': image_features[1],
+        'layer_21': image_features[2]})
+
+    return list(feature_maps.values())
+
+```
+
+Finally, you have to register your model to model builder.  
+Open builders/model_builder.py.  
+Import your feature extractor.  
+```python
+from object_detection.models.ssd_my_model_keras_feature_extractor import SSDMyModelKerasFeatureExtractor
+
+if tf_version.is_tf2():
+  SSD_KERAS_FEATURE_EXTRACTOR_CLASS_MAP = {
+      'ssd_mobilenet_v1_keras': SSDMobileNetV1KerasFeatureExtractor,
+      'ssd_mobilenet_v1_fpn_keras': SSDMobileNetV1FpnKerasFeatureExtractor,
+      'ssd_mobilenet_v2_keras': SSDMobileNetV2KerasFeatureExtractor,
+      'ssd_my_model_keras': SSDMyModelKerasFeatureExtractor,
+```
+
+Change directory to this repository root.  
+Open pretrained_models/ssd_mobilenet_v2_320x320_coco17_tpu-8.config.  
+Change feature_extractor.type to your model name.  
+```
+    feature_extractor {
+      type: 'ssd_my_model_keras'
+```
