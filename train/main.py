@@ -21,6 +21,7 @@ detection_model, model_config = train.builder.build(
     config['model_type'],
     config['input_shape'],
     config['num_classes'],
+    config['meta_info'],
     config['checkpoint'])
 
 tf.keras.backend.set_learning_phase(True)

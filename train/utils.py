@@ -29,8 +29,9 @@ class GradientAccumulatorModel(tf.keras.Model):
     def __apply_accum(self, step_grads):
         self.step_count.assign_add(1)
         for i in range(len(step_grads)):
-            avg_grad = step_grads[i] / tf.cast(self.num_accum, tf.float32)
-            self.grad_accum[i].assign_add(avg_grad)
+            if step_grads[i] is not None:
+                avg_grad = step_grads[i] / tf.cast(self.num_accum, tf.float32)
+                self.grad_accum[i].assign_add(avg_grad)
         tf.cond(tf.equal(self.step_count, self.num_accum),
             self.__apply_grads_and_init, lambda: None)
 

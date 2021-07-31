@@ -6,15 +6,15 @@ from object_detection.builders import model_builder
 import tensorflow.compat.v2 as tf
 
 
-def build(model_type, input_shape, num_classes, checkpoint_path=''):
-    print('Building model and restoring weights for fine-tuning...')
-
+def build(model_type, input_shape, num_classes, meta_info, checkpoint_path=''):
     if model_type == 'MobileNetV2_SSD':
-        pipeline_config = 'pretrained_models/ssd_mobilenet_v2_320x320_coco17_tpu-8.config'
-        # checkpoint_path = 'pretrained_models/ssd_mobilenet_v2_320x320_coco17_tpu-8/checkpoint/ckpt-0'
-    # elif model_type == 'ResNet50V1_SSD_FPN':
-        # pipeline_config = 'pretrained_models/ssd_resnet50_v1_fpn_640x640_coco17_tpu-8.config'
-        # checkpoint_path = 'pretrained_models/ssd_resnet50_v1_fpn_640x640_coco17_tpu-8/checkpoint/ckpt-0'
+        pipeline_config = 'train/builder_configs/ssd_mobilenet_v2.config'
+    elif model_type == 'MobileNetV2_FPN_SSD':
+        pipeline_config = 'train/builder_configs/ssd_mobilenet_v2_fpnlite.config'
+    elif model_type == 'EfficientDet_D0_SSD':
+        pipeline_config = 'train/builder_configs/ssd_efficientdet_d0.config'
+    elif model_type == 'ResNet50V1_FPN_SSD':
+        pipeline_config = 'train/builder_configs/ssd_resnet50_v1_fpn.config'
     else:
         raise 'Unknown model_type: given {}'.format(model_type)
 
@@ -24,6 +24,15 @@ def build(model_type, input_shape, num_classes, checkpoint_path=''):
     model_config.ssd.freeze_batchnorm = False
     model_config.ssd.image_resizer.fixed_shape_resizer.height = input_shape[0]
     model_config.ssd.image_resizer.fixed_shape_resizer.width = input_shape[1]
+    model_config.ssd.matcher.argmax_matcher.matched_threshold = meta_info['matched_threshold']
+    model_config.ssd.matcher.argmax_matcher.unmatched_threshold = meta_info['unmatched_threshold']
+    model_config.ssd.anchor_generator.ssd_anchor_generator.num_layers = meta_info['num_layers']
+    model_config.ssd.feature_extractor.num_layers = meta_info['num_layers']
+    if len(meta_info['feature_extractor']) != 0:
+        model_config.ssd.feature_extractor.type = meta_info['feature_extractor']
+    if model_type == 'EfficientDet_D0_SSD':
+        model_config.ssd.feature_extractor.bifpn.num_iterations = meta_info['bifpn']['num_iterations']
+        model_config.ssd.feature_extractor.bifpn.num_filters = meta_info['bifpn']['num_filters']
     detection_model = model_builder.build(model_config=model_config, is_training=True)
 
     if os.path.exists(checkpoint_path):

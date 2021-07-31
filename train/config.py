@@ -15,8 +15,31 @@ config = {
     #
     # Choose one of below:
     # 1. MobileNetV2_SSD
+    # 2. MobileNetV2_FPN_SSD
+    # 3. EfficientDet_D0_SSD
+    # 4. ResNet50V1_FPN_SSD
     #
     'model_type': 'MobileNetV2_SSD',
+
+    'meta_info':{
+        #
+        # If an empty string, it is built based on 'model_type'.
+        # It is used for a custom feature extractor.
+        #
+        'feature_extractor': '',
+
+        'matched_threshold': 0.5,
+        'unmatched_threshold': 0.5,
+        'base_anchor_height': 1.0,
+        'base_anchor_width': 1.0,
+        'num_layers': 6,
+
+        # bifpn is only for efficient det arch.
+        'bifpn':{
+            'num_iterations': 3,
+            'num_filters': 64
+        },
+    },
 
     #
     # Choose one of below:
