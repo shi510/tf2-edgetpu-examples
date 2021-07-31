@@ -70,10 +70,11 @@ try:
         validation_data=test_ds,
         epochs=config['epoch'],
         callbacks=callbacks)
-except KeyboardInterrupt:
+except (Exception, KeyboardInterrupt) as e:
     print()
     print('============================================')
-    print('         Training is canceled.')
+    print('Training is canceled.')
+    print(e)
     print('============================================')
     print()
 
