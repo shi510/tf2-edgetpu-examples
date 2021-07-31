@@ -28,9 +28,12 @@ class CustomDetectorModel(GradientAccumulatorModel):
 
     def train_step(self, data):
         imgs, labels, boxes = data
-        labels = tf.one_hot(tf.cast(labels, tf.int32), self.num_classes)
-        labels = [tf.expand_dims(x, 0) for x in labels]
-        boxes = [tf.expand_dims(x, 0) for x in boxes]
+        # imgs: shape (batch_size, H, W, C)
+        # labels: shape (batch_size, None, 1), None is number of instances in an image
+        # boxes: shape (batch_size, None, 4), None is number of instances in an image
+        labels = tf.cast(labels, tf.int32)
+        labels = [tf.one_hot(x, self.num_classes) for x in labels]
+        boxes = [x for x in boxes]
         batch_size = len(labels)
         shapes = tf.constant(batch_size * [self.this_input_shape], dtype=tf.int32)
         self.detection_model.provide_groundtruth(
@@ -52,9 +55,12 @@ class CustomDetectorModel(GradientAccumulatorModel):
 
     def test_step(self, data):
         imgs, labels, boxes = data
-        labels = tf.one_hot(tf.cast(labels, tf.int32), self.num_classes)
-        labels = [tf.expand_dims(x, 0) for x in labels]
-        boxes = [tf.expand_dims(x, 0) for x in boxes]
+        # imgs: shape (batch_size, H, W, C)
+        # labels: shape (batch_size, None, 1), None is number of instances in an image
+        # boxes: shape (batch_size, None, 4), None is number of instances in an image
+        labels = tf.cast(labels, tf.int32)
+        labels = [tf.one_hot(x, self.num_classes) for x in labels]
+        boxes = [x for x in boxes]
         batch_size = len(labels)
         shapes = tf.constant(batch_size * [self.this_input_shape], dtype=tf.int32)
         self.detection_model.provide_groundtruth(

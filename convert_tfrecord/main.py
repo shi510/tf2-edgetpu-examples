@@ -3,6 +3,7 @@ import os
 import json
 
 import tensorflow as tf
+import numpy as np
 
 
 def _bytes_feature(value):
@@ -13,10 +14,10 @@ def _bytes_feature(value):
 
 def _int64_feature(value):
     """Returns an int64_list from a bool / enum / int / uint."""
-    return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
+    return tf.train.Feature(int64_list=tf.train.Int64List(value=value))
 
 def _float_feature(value):
-    return tf.train.Feature(float_list=tf.train.FloatList(value=[value]))
+    return tf.train.Feature(float_list=tf.train.FloatList(value=value))
 
 
 def make_tfrecord(root_path, out_file, example_json):
@@ -29,19 +30,15 @@ def make_tfrecord(root_path, out_file, example_json):
         if jpeg_bytes is None:
             print('{} is skipped because it cannot read the file.'.format(img_name))
             continue
-        num_ids = len(data['class_ids'])
-        for i in range(num_ids):
-            box = data['box_list'][i]
-            feature = {
-                'jpeg': _bytes_feature(jpeg_bytes),
-                'label': _int64_feature(data['class_ids'][i]),
-                'x1': _float_feature(box[0]),
-                'y1': _float_feature(box[1]),
-                'x2': _float_feature(box[2]),
-                'y2': _float_feature(box[3])
-            }
-            exam = tf.train.Example(features=tf.train.Features(feature=feature))
-            tf_file.write(exam.SerializeToString())
+        box_list = np.array(data['box_list'], dtype=np.float32)
+        box_list = np.reshape(box_list, (-1))
+        feature = {
+            'jpeg': _bytes_feature(jpeg_bytes),
+            'label_list': _int64_feature(data['class_ids']),
+            'box_list': _float_feature(box_list),
+        }
+        exam = tf.train.Example(features=tf.train.Features(feature=feature))
+        tf_file.write(exam.SerializeToString())
         count = count + 1
         if (n+1) % 1000 == 0:
             print('{} images saved.'.format(n+1))

@@ -34,19 +34,20 @@ def make_tfdataset(tfrecord_path, batch_size, img_shape, enable_aug=False):
 
     def _read_tfrecord(serialized):
         description = {
-            'jpeg': tf.io.FixedLenFeature((), tf.string),
-            'label': tf.io.FixedLenFeature((), tf.int64),
-            'x1': tf.io.FixedLenFeature((), tf.float32),
-            'y1': tf.io.FixedLenFeature((), tf.float32),
-            'x2': tf.io.FixedLenFeature((), tf.float32),
-            'y2': tf.io.FixedLenFeature((), tf.float32)
+            'jpeg': tf.io.FixedLenFeature([], tf.string),
+            'label_list': tf.io.FixedLenSequenceFeature([], tf.int64, True),
+            'box_list': tf.io.FixedLenSequenceFeature([], tf.float32, True),
         }
         example = tf.io.parse_single_example(serialized, description)
-        # image = tf.io.decode_jpeg(example['jpeg'], channels=3)
         image = tf.io.decode_image(example['jpeg'], channels=3, expand_animations=False)
         image = tf.cast(image, tf.float32)
-        label = example['label']
-        box = [ example['y1'], example['x1'], example['y2'], example['x2'] ]
+        label = example['label_list']
+        box = tf.reshape(example['box_list'], (-1, 4))
+        x1 = tf.reshape(box[..., 0], (-1, 1))
+        y1 = tf.reshape(box[..., 1], (-1, 1))
+        x2 = tf.reshape(box[..., 2], (-1, 1))
+        y2 = tf.reshape(box[..., 3], (-1, 1))
+        box = tf.concat([y1, x1, y2, x2], -1)
         image = tf.image.resize(image, img_shape)
         return image, label, box
 
@@ -74,7 +75,7 @@ def make_tfdataset(tfrecord_path, batch_size, img_shape, enable_aug=False):
 
     ds = ds.map(_read_tfrecord)
     ds = ds.shuffle(10000)
-    ds = ds.batch(batch_size)
+    ds = ds.apply(tf.data.experimental.dense_to_ragged_batch(batch_size=batch_size))
     # ds = ds.map(map_eager_decorator(_preprocess))
     ds = ds.map(_preprocess_images)
     if enable_aug:
