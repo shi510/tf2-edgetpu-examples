@@ -6,8 +6,8 @@ WORKDIR $HOME
 RUN curl -s -N https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
 RUN echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" | tee /etc/apt/sources.list.d/coral-edgetpu.list
 RUN apt-get update
-RUN apt-get install -y wget zip git edgetpu-compiler
-RUN pip install pillow tf_slim tensorflow_addons scipy matplotlib pyyaml dataclasses
+RUN apt-get install -y wget zip git edgetpu-compiler libgl1-mesa-glx
+RUN pip install pillow tf_slim tensorflow_addons scipy matplotlib pyyaml dataclasses opencv-python
 
 # Clone main repository
 RUN git clone https://github.com/shi510/tf2-edgetpu-examples
